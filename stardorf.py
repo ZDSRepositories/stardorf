@@ -5,7 +5,7 @@ import random
 # | 7 * 3
 # | 6 5 4
 # v
-NAVGRID = """   ^ 
+NAVGRID = """    ^ 
   8 1 2
 < 7 * 3 >
   6 5 4
@@ -130,7 +130,7 @@ class Galaxy():
             self.starmap[y][x] = None
 
     def count_objects(self, s_designation):
-        # returns STAR, STATION, SHIP
+        # returns STARs, STATIONs, SHIPs
         sector = self.starmap[s_designation]
         star_count = 0
         station_count = 0
@@ -169,7 +169,7 @@ class Galaxy():
     def sector_coords_from_designation(self, s_designation):
         key = list('abcdefghijklmnopqrstuvwx').index(s_designation)
         # print(f"sector {s_designation} is at index {key}")
-        row = int(key / self.STARMAP_HEIGHT)
+        row = int(key / (self.STARMAP_HEIGHT + 2))
         col = key - (row * self.STARMAP_WIDTH)
         return col, row  # x, y
 
@@ -341,17 +341,17 @@ def display_hud(player):
 # There are {0 if count[2] == 1 else (count[2] - 1)} enemy ships in this sector.""")
 
 def display_lrs(s_designation, galaxy):
-    print(f"long-range scan from sector {s_designation}...")
-    sector_x, sector_y = galaxy.sector_coords_from_designation(s_designation)
 
+    sector_x, sector_y = galaxy.sector_coords_from_designation(s_designation)
+    print(f"long-range scan from sector {s_designation}, {sector_x, sector_y}...")
     for y in range(4):
         for x in range(6):
             scanned_sector = galaxy.designation_from_sector_coords(x, y)
             if (abs(x - sector_x) <= 1) and (abs(y - sector_y) == 0) or (abs(x - sector_x) == 0) and (
-                    abs(y - sector_y) <= 1):
+                    abs(y - sector_y) <= 1): #if scanned sector is orthogonal from scanning sector
                 scanned_sector = galaxy.designation_from_sector_coords(x, y)
                 count = galaxy.count_objects(scanned_sector)
-                print(f"  {scanned_sector.upper()}{count[0]}{count[1]}{count[2]}", end="")
+                print(f"  {scanned_sector.upper()}{count[0] if count[0]<10 else '!'}{count[1] if count[1]<10 else '!'}{count[2] if count[2]<10 else '!'}", end="")
             else:
                 print(f"  {scanned_sector.upper()}   ", end="")
         print()
@@ -495,8 +495,8 @@ player = Ship(player_name, entity.DWARF, 'a', [0, 0], [weapon.MAGMA, weapon.RAIL
 g.set_player(player)
 g.gen_starmap(8, 8, 8)
 g.set_tile('a', 0, 0, player)
-g.set_tile('a', 1, 1, Star())
-g.set_tile('a', 2, 2, Station())
+#g.set_tile('a', 1, 1, Star())
+#g.set_tile('a', 2, 2, Station())
 # g.set_tile('a', 3, 3, Ship(name="Stenchfail", parent_entity=entity.GOBLIN, sector='a', weapons=[], coords=[0, 0], energy=100, parent_galaxy=g))
 # display_srs('a', g)
 # display_lrs('a', g)
