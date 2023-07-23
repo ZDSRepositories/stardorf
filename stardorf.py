@@ -108,7 +108,7 @@ class Galaxy():
                     local_coords = [random.randint(0, 9), random.randint(0, 9)]
                 elif s[local_coords[0]][local_coords[1]] == None:
                     # print("placing goblin", i, "in sector", s_designation, "at", local_coords)
-                    s[local_coords[0]][local_coords[1]] = Ship("shipname" + str(i), parent_entity=entity.GOBLIN,
+                    s[local_coords[0]][local_coords[1]] = Ship("newship" + str(i), parent_entity=entity.GOBLIN,
                                                                sector='a', weapons=[2],
                                                                coords=local_coords, energy=100, ammo=0, parent_galaxy=self)
                     placed = True
@@ -129,7 +129,7 @@ class Galaxy():
         if self.valid_coords(sector, x, y):
             self.starmap[y][x] = None
 
-    def count_objects(self, s_designation):
+    def count_objects(self, s_designation, ignore_player = True):
         # returns STARs, STATIONs, SHIPs
         sector = self.starmap[s_designation]
         star_count = 0
@@ -142,7 +142,7 @@ class Galaxy():
                 elif isinstance(tile, Station):
                     station_count += 1
                 elif isinstance(tile, Ship):
-                    ship_count += 1
+                    ship_count += 1 - (ignore_player*tile.parent_entity==entity.DWARF)
         return [star_count, station_count, ship_count]
 
     def get_objects(self, s_designation):
@@ -273,7 +273,7 @@ class Ship():
     def tick(self):
         #TODO: AI vessels should actually move on grid. fix bug and implement energy
         print(f"vessel {self.name} tick called")
-        if self.parent_entity == entity.GOBLIN:
+        if self.parent_entity == entity.GOBLIN and False:
             print(f"vessel {self.name} is moving")
             try:
                 dx, dy = [random.randint(-3, 3), random.randint(-3, 3)]
@@ -290,15 +290,16 @@ class Ship():
             hit = player.parent_galaxy.cast(player.sector, (player.x, player.y), targeting)
             if isinstance(hit, Ship):
                 damage, fatal = hit.hull, True
-                player.parent_galaxy.set_tile(player.sector, hit.x, hit.y, None, replace=True)
         elif wtype == weapon.RAILGUN and wcount > 0:
             hit = player.parent_galaxy.get_tile(player.sector, *targeting)
             if isinstance(hit, Ship):
                 for gun in range(wcount):
                     damage += random.randint(5, 20)
-                if (hit.hull - damage) < 0:
+                if (hit.hull - damage) <= 0:
                     fatal = True
-                    player.parent_galaxy.set_tile(player.sector, *targeting, None, replace=True)
+        if fatal:
+            player.parent_galaxy.set_tile(player.sector, hit.x, hit.y, None, replace=True)
+            print(player.parent_galaxy.starmap[player.sector])
         return hit, damage, fatal
 
 
