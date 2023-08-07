@@ -40,7 +40,7 @@ class entity:
 class weapon:
     RAILGUN = 0
     MAGMA = 1
-    CATAPULT = 2
+    ARBALEST = 2
     NAMES = ["adamantine railgun", "magma cannon", "plasma catapult"]
 
 
@@ -109,16 +109,16 @@ class Galaxy():
                 elif s[local_coords[0]][local_coords[1]] == None:
                     # print("placing goblin", i, "in sector", s_designation, "at", local_coords)
                     s[local_coords[0]][local_coords[1]] = Ship("newship" + str(i), parent_entity=entity.GOBLIN,
-                                                               sector='a', weapons=[2],
-                                                               coords=local_coords, energy=100, ammo=0, parent_galaxy=self)
+                                                               sector=s_designation, weapons=[weapon.ARBALEST, weapon.ARBALEST],
+                                                               coords=[local_coords[1],local_coords[0]], energy=random.randint(1,2), ammo=100, parent_galaxy=self)
                     placed = True
 
     def set_tile(self, sector, x, y, object, replace=False):
         # returns True on success
         if not replace and self.starmap[sector][y][x] != None:  # row-column!
             return False
+        #print(f"setting {self.starmap[sector][y][x]} at {(x, y)} to {object}")
         self.starmap[sector][y][x] = object
-        print(f"setting tile at {(x, y)} to {object}")
         return True
 
     def get_tile(self, sector, x, y):
@@ -157,6 +157,7 @@ class Galaxy():
                     objects[1].append(tile)
                 elif isinstance(tile, Ship):
                     objects[2].append(tile)
+                    print(f"added {tile}, {entity.NAMES[tile.parent_entity]} in {tile.sector}")
         return objects
 
     def sector_from_designation(self, s_designation):
@@ -186,7 +187,7 @@ class Galaxy():
         for i in range(stardates):
             for ship in self.get_objects(self.player.sector)[2]:
                 ship.tick()
-                self.stardate += 1
+            self.stardate += 1
 
     def neighbors(self, sector, x, y, orthogonal=False):
         neighbors = []
@@ -209,10 +210,10 @@ class Galaxy():
     def cast(self, sector, start, slope, first = True):
         path = []
         current = start[0] + slope[0], start[1] + slope[1]
-        print(f"cast on {current}")
+        #print(f"cast on {current}")
         while self.valid_coords(sector, *current):
             new_tile = self.get_tile(sector, *current)
-            print(f"path: {new_tile} at {current}")
+            #print(f"path: {new_tile} at {current}")
             if first and new_tile != None: return new_tile
             path.append(new_tile)
             current = [current[i] + slope[i] for i in range(len(current))]
@@ -258,10 +259,10 @@ class Ship():
     def move_to(self, new_sector, new_x, new_y, clamp = True):
         if clamp:
             new_x = max(0, new_x)
-            new_x = min(new_x, self.parent_galaxy.SECTOR_WIDTH)
+            new_x = min(new_x, self.parent_galaxy.SECTOR_WIDTH - 1)
             new_y = max(0, new_y)
-            new_y = min(new_y, self.parent_galaxy.SECTOR_HEIGHT)
-        print(f" {self.name} moving to {(new_x, new_y)}")
+            new_y = min(new_y, self.parent_galaxy.SECTOR_HEIGHT - 1)
+        #print(f" {self.name} moving to {(new_x, new_y)}")
         self.parent_galaxy.set_tile(self.sector, self.x, self.y, None, True)  # clear current tile
 
         self.sector = new_sector
@@ -272,34 +273,50 @@ class Ship():
 
     def tick(self):
         #TODO: AI vessels should actually move on grid. fix bug and implement energy
-        print(f"vessel {self.name} tick called")
-        if self.parent_entity == entity.GOBLIN and False:
-            print(f"vessel {self.name} is moving")
-            try:
-                dx, dy = [random.randint(-3, 3), random.randint(-3, 3)]
-                newx, newy = self.x + dx, self.y + dy
-                self.move_to(self.sector, newx, newy)
-            except Exception as e:
-                print(" "+str(e))
+        #print(f"vessel {self.name} tick called")
+        if self.parent_entity == entity.GOBLIN:
+            self.energy = [2, 0, 1][self.energy]  # cycle thru energy
+            if self.energy == 2:
+                try:
+                    dx, dy = [random.randint(-3, 3), random.randint(-3, 3)]
+                    newx, newy = self.x + dx, self.y + dy
+                    self.move_to(self.sector, newx, newy)
+                    print(f"goblin moving to {(self.x, self.y)}")
+                except Exception as e:
+                    print(" "+str(e))
+            elif self.energy == 1:
+                vessels = self.parent_galaxy.get_objects(self.sector)[2]
+                print(f"goblin sees: {list(v.parent_entity for v in vessels)}")
+                dwarf = list(filter(lambda v: v.parent_entity == entity.DWARF, vessels))[0]
+                target_coords = dwarf.x, dwarf.y
+                print(f"The goblin vessel at {(self.x, self.y)} fires an arbalest!")
+                hit = self.fire(wtype=weapon.ARBALEST, targeting=target_coords)
+                print(hit)
+
+
 
     def fire(self, wtype, targeting):
         wcount = len(list(filter(lambda w: w == wtype, self.weapons)))
-        print(f"wtype {wtype} and wcount {wcount}")
+        #print(f"wtype {wtype} and wcount {wcount}")
         hit, damage, fatal = None, 0, False
         if wtype == weapon.MAGMA and wcount > 0:
             hit = player.parent_galaxy.cast(player.sector, (player.x, player.y), targeting)
             if isinstance(hit, Ship):
                 damage, fatal = hit.hull, True
-        elif wtype == weapon.RAILGUN and wcount > 0:
+        elif wtype in [weapon.RAILGUN, weapon.ARBALEST] and wcount > 0:
             hit = player.parent_galaxy.get_tile(player.sector, *targeting)
             if isinstance(hit, Ship):
-                for gun in range(wcount):
+                for gun in range(min(wcount, self.ammo)):
                     damage += random.randint(5, 20)
+                    self.ammo -= 1
                 if (hit.hull - damage) <= 0:
                     fatal = True
+                hit.hull -= damage
         if fatal:
+            #print(f"hit reported to main routine as hit.x, hit.y = {[hit.x, hit.y]}")
             player.parent_galaxy.set_tile(player.sector, hit.x, hit.y, None, replace=True)
-            print(player.parent_galaxy.starmap[player.sector])
+            #print(player.parent_galaxy.starmap[player.sector])
+            #raise Exception("we're done here, watch the traceback")
         return hit, damage, fatal
 
 
@@ -326,14 +343,14 @@ def display_srs(s_designation, galaxy):
             else:
                 print(" . ", end="")
         print()
-    for row in s:
-        for tile in row:
-            try: print((tile.name, (tile.x, tile.y)))
-            except: pass
+    #for row in s:
+    #    for tile in row:
+    #        try: print((tile.name, (tile.x, tile.y)))
+    #        except: pass
 
 
 def display_hud(player):
-    print(f"\n{TIME_LIMIT - player.parent_galaxy.stardate} STARDATES REMAINING")
+    print(f"{TIME_LIMIT - player.parent_galaxy.stardate} STARDATES REMAINING")
     print("SECTOR", player.sector.upper())
     print(f"HULL {player.hull} / ENERGY {player.energy} / SHIELDS {player.shields} / AMMO {player.ammo}")
     count = player.parent_galaxy.count_objects(player.sector)
@@ -439,7 +456,7 @@ def fire_weapons(player):
     elif w == weapon.MAGMA:
         dir = -1
         print(NAVGRID)
-        while not (dir >= 1 and dir <= 8):
+        while not (1 <= dir <= 8):
             dir = int(input("firing direction:"))
         hit, damage, fatal = player.fire(w, NAV_DIRECTIONS[dir])
     if not w in player.weapons:
@@ -501,23 +518,28 @@ g.set_tile('a', 0, 0, player)
 # g.set_tile('a', 3, 3, Ship(name="Stenchfail", parent_entity=entity.GOBLIN, sector='a', weapons=[], coords=[0, 0], energy=100, parent_galaxy=g))
 # display_srs('a', g)
 # display_lrs('a', g)
-print(f"weapons: {player.weapons}")
+#print(f"weapons: {player.weapons}")
 while True:
     display_hud(player)
     # print(g.neighbors(player.sector, player.x, player.y, orthogonal=True))
     cmd = input("Enter command or 'help': ").lower().strip()
     if cmd == "jump":
         player_jump(g, player)
+        input("...")
     elif cmd == "srs":
         display_srs(player.sector, g)
+        input("...")
     elif cmd == "lrs":
         display_lrs(player.sector, g)
+        input("...")
     elif cmd == "shields" or cmd == "shield":
         raise_shields(player)
     elif cmd == "warp":
         player_warp(player)
+        input("...")
     elif cmd == "fire":
         fire_weapons(player)
+        input("...")
     elif cmd == "help":
         print(COMMAND_TEXT)
         input("[enter]...")
