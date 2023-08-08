@@ -22,7 +22,7 @@ def display_srs(s_designation, galaxy):
 
 
 def display_hud(player):
-    print(f"{TIME_LIMIT - player.parent_galaxy.stardate} STARDATES REMAINING")
+    print(f"{TIME_LIMIT - player.parent_galaxy.stardate} STARDATES{(',', '!')[(TIME_LIMIT-player.parent_galaxy.stardate) <= TIME_LIMIT/2]} {player.parent_galaxy.goblin_count} GOBLINS")
     print("SECTOR", player.sector.upper())
     print(f"HULL {player.hull} / ENERGY {player.energy} / SHIELDS {player.shields} / AMMO {player.ammo}")
     count = player.parent_galaxy.count_objects(player.sector)
@@ -31,7 +31,6 @@ def display_hud(player):
 # There are {0 if count[2] == 1 else (count[2] - 1)} enemy ships in this sector.""")
 
 def display_lrs(s_designation, galaxy):
-
     sector_x, sector_y = galaxy.sector_coords_from_designation(s_designation)
     print(f"long-range scan from sector {s_designation}, {sector_x, sector_y}...")
     for y in range(4):
@@ -53,13 +52,13 @@ def player_jump(galaxy, player):
     while not x >= 0 and x <= 9:
         try:
             x = int(input("local x coordinate (0-9)? "))
-        except TypeError:
-            pass
+        except:
+            return
     while not y >= 0 and y <= 9:
         try:
             y = int(input("local y coordinate (0-9)? "))
-        except TypeError:
-            pass
+        except:
+            return
     jump_dist = dist([player.x, player.y], [x, y])
     date_cost = int(jump_dist / 8) + 1
     energy_cost = int(jump_dist * 10)
@@ -68,7 +67,7 @@ def player_jump(galaxy, player):
         print("Scanners found an object at jump location, canceling.")
         return False
     if input(
-            f"This will cost {energy_cost} energy and take {date_cost} stardates, confirm (y/n)? ").lower().strip() != "y":
+            f"Jump will cost {energy_cost} energy and take {date_cost} stardates, confirm (y/n)? ").lower().strip() != "y":
         return False
     else:
         galaxy.tick(date_cost)
@@ -85,8 +84,8 @@ def player_warp(player):
     dest_coords = player.parent_galaxy.sector_coords_from_designation(destination)
     warp_dist = dist(start_coords, dest_coords)
     # print(f"[DEBUG-INFO] {start_coords} -> {dest_coords} = {warp_dist} distance")
-    date_cost = int(warp_dist + 2)
-    energy_cost = int(warp_dist) * 10 * 10
+    date_cost = int(warp_dist)
+    energy_cost = int(warp_dist) * 10 * 5
     if input(
             f"Warping to sector {destination} will use {energy_cost} energy and take {date_cost} stardates to prepare, confirm (y/n)?").lower().strip() != 'y':
         return False
@@ -148,8 +147,6 @@ def fire_weapons(player):
 
 
 
-running = True
-
 print("""*** Welcome to STAR DORF ***""")
 player_name = input("What is your vessel named? ")
 
@@ -181,54 +178,54 @@ if input("Print intro/help now (y/n)? ").lower().strip() == "y":
 input("[Enter] to embark on this mission...")
 
 g = Galaxy()
-player = Ship(player_name, entity.DWARF, 'a', [0, 0], [weapon.MAGMA, weapon.RAILGUN, weapon.RAILGUN, weapon.RAILGUN, weapon.RAILGUN], Ship.MAX_ENERGY, Ship.MAX_AMMO, g)
-g.set_player(player)
+player_global = Ship(player_name, entity.DWARF, 'a', [0, 0], [weapon.MAGMA, weapon.RAILGUN, weapon.RAILGUN, weapon.RAILGUN, weapon.RAILGUN], Ship.MAX_ENERGY, Ship.MAX_AMMO, g)
+g.set_player(player_global)
 g.gen_starmap(8, 8, 8)
-g.set_tile('a', 0, 0, player)
+g.set_tile('a', 0, 0, player_global)
 #g.set_tile('a', 1, 1, Star())
 #g.set_tile('a', 2, 2, Station())
 # g.set_tile('a', 3, 3, Ship(name="Stenchfail", parent_entity=entity.GOBLIN, sector='a', weapons=[], coords=[0, 0], energy=100, parent_galaxy=g))
 # display_srs('a', g)
 # display_lrs('a', g)
-#print(f"weapons: {player.weapons}")
+#print(f"weapons: {player_global.weapons}")
 while True:
-    display_hud(player)
-    # print(g.neighbors(player.sector, player.x, player.y, orthogonal=True))
+    display_hud(player_global)
+    # print(g.neighbors(player_global.sector, player_global.x, player_global.y, orthogonal=True))
     cmd = input("Enter command or 'help': ").lower().strip()
     if cmd == "jump":
-        player_jump(g, player)
+        player_jump(g, player_global)
         input("...")
     elif cmd == "srs":
-        display_srs(player.sector, g)
+        display_srs(player_global.sector, g)
         input("...")
     elif cmd == "lrs":
-        display_lrs(player.sector, g)
+        display_lrs(player_global.sector, g)
         input("...")
     elif cmd == "shields" or cmd == "shield":
-        raise_shields(player)
+        raise_shields(player_global)
     elif cmd == "warp":
-        player_warp(player)
+        player_warp(player_global)
         input("...")
     elif cmd == "fire":
-        fire_weapons(player)
+        fire_weapons(player_global)
         input("...")
     elif cmd == "help":
         print(COMMAND_TEXT)
         input("[enter]...")
 
-    if list(filter(lambda n: isinstance(n, Station), g.neighbors(player.sector, player.x, player.y, orthogonal=True))):
-        # print(g.neighbors(player.sector, player.x, player.y, orthogonal=True))
+    if list(filter(lambda n: isinstance(n, Station), g.neighbors(player_global.sector, player_global.x, player_global.y, orthogonal=True))):
+        # print(g.neighbors(player_global.sector, player_global.x, player_global.y, orthogonal=True))
         # refuel, restock, repair
         print(f"\nShields lowered for docking...")
-        player.shields = 0
-        if player.energy < player.MAX_ENERGY:
-            player.energy = player.MAX_ENERGY
+        player_global.shields = 0
+        if player_global.energy < player_global.MAX_ENERGY:
+            player_global.energy = player_global.MAX_ENERGY
             print(" Energy recharged.")
-        if player.ammo < player.MAX_AMMO:
-            player.ammo = player.MAX_AMMO
+        if player_global.ammo < player_global.MAX_AMMO:
+            player_global.ammo = player_global.MAX_AMMO
             print(" Ammunition restocked.")
-        if player.hull < player.MAX_HULL:
-            player.hull = player.MAX_HULL
+        if player_global.hull < player_global.MAX_HULL:
+            player_global.hull = player_global.MAX_HULL
             print(" Hull repaired.")
-        player.shields = 500
-        print(f" Shields raised to {player.shields}.")
+        player_global.shields = 100
+        print(f"Shields raised to {player_global.shields}.")

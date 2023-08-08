@@ -59,9 +59,12 @@ class Galaxy():
         self.STARMAP_WIDTH, self.STARMAP_HEIGHT = starmap_size
         self.SECTOR_WIDTH, self.SECTOR_HEIGHT = sector_size
         self.stardate = 0
+        self.goblin_count = 0
+
 
     def gen_starmap(self, num_stars, num_goblins, num_stations):
         # print("populating parent_galaxy...")
+        self.goblin_count = num_goblins
         self.starmap = {}
         for i in list('abcdefghijklmnopqrstuvwx'):
             self.starmap[i] = [[None for i in range(10)] for j in range(10)]
@@ -157,7 +160,7 @@ class Galaxy():
                     objects[1].append(tile)
                 elif isinstance(tile, Ship):
                     objects[2].append(tile)
-                    print(f"added {tile}, {entity.NAMES[tile.parent_entity]} in {tile.sector}")
+                    #print(f"added {tile}, {entity.NAMES[tile.parent_entity]} in {tile.sector}")
         return objects
 
     def sector_from_designation(self, s_designation):
@@ -281,17 +284,18 @@ class Ship():
                     dx, dy = [random.randint(-3, 3), random.randint(-3, 3)]
                     newx, newy = self.x + dx, self.y + dy
                     self.move_to(self.sector, newx, newy)
-                    print(f"goblin moving to {(self.x, self.y)}")
+                    print(f"Goblin vessel moves to {(self.x, self.y)}.")
                 except Exception as e:
                     print(" "+str(e))
             elif self.energy == 1:
                 vessels = self.parent_galaxy.get_objects(self.sector)[2]
-                print(f"goblin sees: {list(v.parent_entity for v in vessels)}")
+                #print(f"goblin sees: {list(v.parent_entity for v in vessels)}")
                 dwarf = list(filter(lambda v: v.parent_entity == entity.DWARF, vessels))[0]
                 target_coords = dwarf.x, dwarf.y
+                hit, damage, fatal = self.fire(wtype=weapon.ARBALEST, targeting=target_coords)
                 print(f"The goblin vessel at {(self.x, self.y)} fires an arbalest!")
-                hit = self.fire(wtype=weapon.ARBALEST, targeting=target_coords)
-                print(hit)
+                print(f"The Plasma Arbalest bolts strike for {damage} damage!")
+                #print(hit)
 
 
 
@@ -300,22 +304,26 @@ class Ship():
         #print(f"wtype {wtype} and wcount {wcount}")
         hit, damage, fatal = None, 0, False
         if wtype == weapon.MAGMA and wcount > 0:
-            hit = player.parent_galaxy.cast(player.sector, (player.x, player.y), targeting)
+            hit = self.parent_galaxy.cast(self.sector, (self.x, self.y), targeting)
             if isinstance(hit, Ship):
                 damage, fatal = hit.hull, True
         elif wtype in [weapon.RAILGUN, weapon.ARBALEST] and wcount > 0:
-            hit = player.parent_galaxy.get_tile(player.sector, *targeting)
+            hit = self.parent_galaxy.get_tile(self.sector, *targeting)
             if isinstance(hit, Ship):
                 for gun in range(min(wcount, self.ammo)):
                     damage += random.randint(5, 20)
                     self.ammo -= 1
-                if (hit.hull - damage) <= 0:
+                absorbed_damage = min(hit.shields, damage)
+                hit.shields -= absorbed_damage
+                hit.hull -= (damage - absorbed_damage)
+                if hit.hull <= 0:
                     fatal = True
-                hit.hull -= damage
         if fatal:
             #print(f"hit reported to main routine as hit.x, hit.y = {[hit.x, hit.y]}")
-            player.parent_galaxy.set_tile(player.sector, hit.x, hit.y, None, replace=True)
-            #print(player.parent_galaxy.starmap[player.sector])
+            self.parent_galaxy.set_tile(self.sector, hit.x, hit.y, None, replace=True)
+            if hit.parent_entity == entity.GOBLIN:
+                self.parent_galaxy.goblin_count -= 1
+            #print(player_global.parent_galaxy.starmap[player_global.sector])
             #raise Exception("we're done here, watch the traceback")
         return hit, damage, fatal
 
