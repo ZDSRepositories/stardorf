@@ -23,7 +23,7 @@ NAV_DIRECTIONS = (
     (-1, -1),  # 8
 )
 
-TIME_LIMIT = 30
+TIME_LIMIT = 35
 
 CIV_NAME = "Ilsodil"
 

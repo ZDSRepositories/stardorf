@@ -238,7 +238,7 @@ while True:
     if player_global.hull <= 0 or player_global.energy <= 0:
         win = False
         break
-    if player_global.parent_galaxy.stardate <= 0:
+    if (TIME_LIMIT - player_global.parent_galaxy.stardate) <= 0:
         win = False
         break
 
@@ -253,7 +253,7 @@ else:
         print(f"The {player_name} has fallen in battle against the last goblin scout.")
     elif player_global.energy <= 0:
         print(f"The {player_name} has been stranded in space, engines and weapons falling cold as the last of her energy bleeds away.")
-    elif player_global.parent_galaxy.stardate <= 0:
-        print(f"The {player_name} fought tirelessly, but it could not slow down the scouts quite fast enough.")
+    elif (TIME_LIMIT - player_global.parent_galaxy.stardate) <= 0:
+        print(f"The {player_name} fought tirelessly, but she could not slow down the scouts quite fast enough.")
     print("Boldened by their victory against a Dwarven warship, the goblins move ever closer to the Mountainhome...")
     input("...")
