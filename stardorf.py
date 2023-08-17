@@ -79,8 +79,10 @@ def player_jump(galaxy, player):
 def player_warp(player):
     start_coords = player.parent_galaxy.sector_coords_from_designation(player.sector)
     destination = None
-    while not (destination in player.parent_galaxy.starmap.keys() and destination != player.sector):
+    while not destination in player.parent_galaxy.starmap.keys():
         destination = input("Destination sector? ")
+        if destination == player.sector:
+            return
     dest_coords = player.parent_galaxy.sector_coords_from_designation(destination)
     warp_dist = dist(start_coords, dest_coords)
     # print(f"[DEBUG-INFO] {start_coords} -> {dest_coords} = {warp_dist} distance")
@@ -167,7 +169,7 @@ The {player_name} nav computer accepts:
 INTRO_TEXT = f"""* MISSION *
 The goblin empire has been skirmishing in sectors near Dwarven space. 
 If their scouts are not defeated, they will spell doom for our glorious Dwarven civilization.
-You've been put in command of the pride of the Dwarven navy, the warship {player_name}, outfitted with adamantine railguns and a magma cannon.
+You've been put in command of the pride of the warship {player_name}, pride of the Dwarven navy, outfitted with adamantine railguns and a magma cannon.
 In these unconquered sectors, human starbases scattered about will be your only source of fuel and repair.
 Your mission: strike down these goblin starships in {TIME_LIMIT} turns before they can overrun the Mountainhome.
 
@@ -180,7 +182,7 @@ input("[Enter] to embark on this mission...")
 g = Galaxy()
 player_global = Ship(player_name, entity.DWARF, 'a', [0, 0], [weapon.MAGMA, weapon.RAILGUN, weapon.RAILGUN, weapon.RAILGUN, weapon.RAILGUN], Ship.MAX_ENERGY, Ship.MAX_AMMO, g)
 g.set_player(player_global)
-g.gen_starmap(8, 8, 8)
+g.gen_starmap(12, 8, 5)
 g.set_tile('a', 0, 0, player_global)
 #g.set_tile('a', 1, 1, Star())
 #g.set_tile('a', 2, 2, Station())
@@ -188,6 +190,7 @@ g.set_tile('a', 0, 0, player_global)
 # display_srs('a', g)
 # display_lrs('a', g)
 #print(f"weapons: {player_global.weapons}")
+win = False
 while True:
     display_hud(player_global)
     # print(g.neighbors(player_global.sector, player_global.x, player_global.y, orthogonal=True))
@@ -212,10 +215,9 @@ while True:
     elif cmd == "help":
         print(COMMAND_TEXT)
         input("[enter]...")
-
+    #refuel, restock, repair at stations
     if list(filter(lambda n: isinstance(n, Station), g.neighbors(player_global.sector, player_global.x, player_global.y, orthogonal=True))):
         # print(g.neighbors(player_global.sector, player_global.x, player_global.y, orthogonal=True))
-        # refuel, restock, repair
         print(f"\nShields lowered for docking...")
         player_global.shields = 0
         if player_global.energy < player_global.MAX_ENERGY:
@@ -229,3 +231,29 @@ while True:
             print(" Hull repaired.")
         player_global.shields = 100
         print(f"Shields raised to {player_global.shields}.")
+    # check for win or loss state
+    if player_global.parent_galaxy.goblin_count <= 0:
+        win = True
+        break
+    if player_global.hull <= 0 or player_global.energy <= 0:
+        win = False
+        break
+    if player_global.parent_galaxy.stardate <= 0:
+        win = False
+        break
+
+#handle win or loss
+if win:
+    print(f"The {player_name} wiped out the goblin scouts, keeping their vessels from siegeing the Mountainhome!\nYour name has been engraved in the depths of the ancestral asteroids.")
+    input("...")
+else:
+    if player_global.hull <= 0 and player_global.parent_galaxy.goblin_count > 1:
+        print(f"The {player_name} has fallen in battle against the goblin scouts.")
+    elif player_global.hull <= 0 and player_global.parent_galaxy.goblin_count == 1:
+        print(f"The {player_name} has fallen in battle against the last goblin scout.")
+    elif player_global.energy <= 0:
+        print(f"The {player_name} has been stranded in space, engines and weapons falling cold as the last of her energy bleeds away.")
+    elif player_global.parent_galaxy.stardate <= 0:
+        print(f"The {player_name} fought tirelessly, but it could not slow down the scouts quite fast enough.")
+    print("Boldened by their victory against a Dwarven warship, the goblins move ever closer to the Mountainhome...")
+    input("...")

@@ -76,7 +76,7 @@ class Galaxy():
             local_coords = [random.randint(0, 9), random.randint(0, 9)]
             placed = False
             while not placed:
-                if s[local_coords[0]][local_coords[1]] != None:
+                if s[local_coords[0]][local_coords[1]] != None and self.count_objects(s_designation)[0] < 3:
                     # print("tile occupied by", s[local_coords[0]][local_coords[1]])
                     local_coords = [random.randint(0, 9), random.randint(0, 9)]
                 elif s[local_coords[0]][local_coords[1]] == None:
@@ -91,7 +91,7 @@ class Galaxy():
             local_coords = [random.randint(0, 9), random.randint(0, 9)]
             placed = False
             while not placed:
-                if s[local_coords[0]][local_coords[1]] != None:
+                if s[local_coords[0]][local_coords[1]] != None and self.count_objects(s_designation)[1] == 0:
                     # print("tile occupied by", s[local_coords[0]][local_coords[1]])
                     local_coords = [random.randint(0, 9), random.randint(0, 9)]
                 elif s[local_coords[0]][local_coords[1]] == None:
