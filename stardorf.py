@@ -244,7 +244,7 @@ while True:
 
 #handle win or loss
 if win:
-    print(f"The {player_name} wiped out the goblin scouts, keeping their vessels from siegeing the Mountainhome!\nYour name has been engraved in the depths of the ancestral asteroids.")
+    print(f"The {player_name} has wiped out the goblin scouts, keeping their vessels from siegeing the Mountainhome!\nYour name has been engraved in the depths of the ancestral asteroids.")
     input("...")
 else:
     if player_global.hull <= 0 and player_global.parent_galaxy.goblin_count > 1:
