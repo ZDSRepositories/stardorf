@@ -121,7 +121,10 @@ def raise_shields(player):
 def fire_weapons(player):
     w = ""
     while not w.isdecimal():
-        w = int(input("0 - railguns, 1 - magma cannon: "))
+        try:
+            w = int(input("0 - railguns, 1 - magma cannon: "))
+        except:
+            return
     if w == weapon.RAILGUN:
         target = (-1, -1)
         while not player.parent_galaxy.valid_coords(player.sector, *target):
