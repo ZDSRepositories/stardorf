@@ -122,9 +122,10 @@ def fire_weapons(player):
     w = ""
     while not w.isdecimal():
         try:
-            w = int(input("0 - railguns, 1 - magma cannon: "))
+            w = input("0 - railguns, 1 - magma cannon: ")
         except:
             return
+    w = int(w)
     if w == weapon.RAILGUN:
         target = (-1, -1)
         while not player.parent_galaxy.valid_coords(player.sector, *target):
