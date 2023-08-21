@@ -119,7 +119,9 @@ def raise_shields(player):
     print(f"Raised shields to {player.shields} energy.")
 
 def fire_weapons(player):
-    w = int(input("0 - railguns, 1 - magma cannon: "))
+    w = ""
+    while not w.isdecimal():
+        w = int(input("0 - railguns, 1 - magma cannon: "))
     if w == weapon.RAILGUN:
         target = (-1, -1)
         while not player.parent_galaxy.valid_coords(player.sector, *target):
