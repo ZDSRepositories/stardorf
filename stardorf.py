@@ -119,13 +119,10 @@ def raise_shields(player):
     print(f"Raised shields to {player.shields} energy.")
 
 def fire_weapons(player):
-    w = ""
-    while not w.isdecimal():
-        try:
-            w = input("0 - railguns, 1 - magma cannon: ")
-        except:
-            return
-    w = int(w)
+    try:
+        w = int(input("0 - railguns, 1 - magma cannon: "))
+    except:
+        return
     if w == weapon.RAILGUN:
         target = (-1, -1)
         while not player.parent_galaxy.valid_coords(player.sector, *target):
@@ -136,7 +133,10 @@ def fire_weapons(player):
         dir = -1
         print(NAVGRID)
         while not (1 <= dir <= 8):
-            dir = int(input("firing direction:"))
+            try:
+                dir = int(input("firing direction:"))
+            except:
+                return
         hit, damage, fatal = player.fire(w, NAV_DIRECTIONS[dir])
     if not w in player.weapons:
         print("no such weapon. targeting cancelled.")
