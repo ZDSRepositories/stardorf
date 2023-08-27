@@ -175,7 +175,7 @@ The {player_name} nav computer accepts:
 INTRO_TEXT = f"""* MISSION *
 The goblin empire has been skirmishing in sectors near Dwarven space. 
 If their scouts are not defeated, they will spell doom for our glorious Dwarven civilization.
-You've been put in command of the pride of the warship {player_name}, pride of the Dwarven navy, outfitted with adamantine railguns and a magma cannon.
+You've been put in command of the {player_name}, pride of the Dwarven navy, outfitted with adamantine railguns and a magma cannon.
 In these unconquered sectors, human starbases scattered about will be your only source of fuel and repair.
 Your mission: strike down these goblin starships in {TIME_LIMIT} turns before they can overrun the Mountainhome.
 
