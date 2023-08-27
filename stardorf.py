@@ -203,21 +203,16 @@ while True:
     cmd = input("Enter command or 'help': ").lower().strip()
     if cmd == "jump":
         player_jump(g, player_global)
-        input("...")
     elif cmd == "srs":
         display_srs(player_global.sector, g)
-        input("...")
     elif cmd == "lrs":
         display_lrs(player_global.sector, g)
-        input("...")
     elif cmd == "shields" or cmd == "shield":
         raise_shields(player_global)
     elif cmd == "warp":
         player_warp(player_global)
-        input("...")
     elif cmd == "fire":
         fire_weapons(player_global)
-        input("...")
     elif cmd == "help":
         print(COMMAND_TEXT)
         input("[enter]...")
