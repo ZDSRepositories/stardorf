@@ -30,17 +30,20 @@ def display_hud(player):
 # There are {count[1]} stations in this sector.
 # There are {0 if count[2] == 1 else (count[2] - 1)} enemy ships in this sector.""")
 
-def display_lrs(s_designation, galaxy):
+def display_lrs(s_designation, galaxy, player: Ship):
     sector_x, sector_y = galaxy.sector_coords_from_designation(s_designation)
     print(f"long-range scan from sector {s_designation}, {sector_x, sector_y}...")
     for y in range(4):
         for x in range(6):
             scanned_sector = galaxy.designation_from_sector_coords(x, y)
             if (abs(x - sector_x) <= 1) and (abs(y - sector_y) == 0) or (abs(x - sector_x) == 0) and (
-                    abs(y - sector_y) <= 1): #if scanned sector is orthogonal from scanning sector
+                    abs(y - sector_y) <= 1): #if scanned sector is orthogonal from scanning sector...
+                player.learn_sector(scanned_sector) # add it to known space
+            if scanned_sector in player.known_space: # and display a known sector
                 scanned_sector = galaxy.designation_from_sector_coords(x, y)
                 count = galaxy.count_objects(scanned_sector)
-                print(f"  {scanned_sector.upper()}{count[0] if count[0]<10 else '!'}{count[1] if count[1]<10 else '!'}{count[2] if count[2]<10 else '!'}", end="")
+                print(f"  {scanned_sector.upper()}{count[0] if count[0] < 10 else '!'}{count[1] if count[1] < 10 else '!'}{count[2] if count[2] < 10 else '!'}",
+                    end="")
             else:
                 print(f"  {scanned_sector.upper()}   ", end="")
         print()
@@ -206,7 +209,7 @@ while True:
     elif cmd == "srs":
         display_srs(player_global.sector, g)
     elif cmd == "lrs":
-        display_lrs(player_global.sector, g)
+        display_lrs(player_global.sector, g, player_global)
     elif cmd == "shields" or cmd == "shield":
         raise_shields(player_global)
     elif cmd == "warp":

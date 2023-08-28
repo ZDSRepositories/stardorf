@@ -242,6 +242,7 @@ class Ship():
         self.parent_galaxy = parent_galaxy
         self.hull = 100
         self.shields = 0
+        self.known_space = []
 
     def get_char(self):
         return ("@", "g", "e")[self.parent_entity]
@@ -273,6 +274,8 @@ class Ship():
         self.y = new_y
 
         self.parent_galaxy.set_tile(self.sector, self.x, self.y, self, False)  # add to destination tile
+
+        self.learn_sector(self.sector)
 
     def tick(self):
         #DONE: AI vessels should actually move on grid. fix bug and implement energy
@@ -327,6 +330,15 @@ class Ship():
             #raise Exception("we're done here, watch the traceback")
         return hit, damage, fatal
 
+    def learn_sector(self, designation: str):
+        if not designation in self.known_space:
+            self.known_space.append(designation)
+
+    def forget_sector(self, designation: str):
+        try:
+            self.known_space.remove(designation)
+        except:
+            pass
 
 
 class Star():
