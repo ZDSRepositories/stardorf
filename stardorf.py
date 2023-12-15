@@ -81,9 +81,9 @@ def player_jump(galaxy, player):
 
 def player_warp(player):
     start_coords = player.parent_galaxy.sector_coords_from_designation(player.sector)
-    destination = None
-    while not destination in player.parent_galaxy.starmap.keys():
-        destination = input("Destination sector? ")
+    destination = ""
+    while not destination.lower() in player.parent_galaxy.starmap.keys():
+        destination = input("Destination sector? ").lower()
         if destination == player.sector:
             return
     dest_coords = player.parent_galaxy.sector_coords_from_designation(destination)
@@ -248,7 +248,7 @@ while True:
 
 #handle win or loss
 if win:
-    print(f"The {player_name} has wiped out the goblin scouts, keeping their vessels from siegeing the Mountainhome!\nYour name has been engraved in the depths of the ancestral asteroids.")
+    print(f"The {player_name} has driven out the goblin scouts, keeping their vessels from siegeing the Mountainhome.\nYour name has been engraved in the depths of the ancestral asteroids.")
     input("...")
 else:
     if player_global.hull <= 0 and player_global.parent_galaxy.goblin_count > 1:
@@ -256,7 +256,7 @@ else:
     elif player_global.hull <= 0 and player_global.parent_galaxy.goblin_count == 1:
         print(f"The {player_name} has fallen in battle against the last goblin scout.")
     elif player_global.energy <= 0:
-        print(f"The {player_name} has been stranded in space, engines and weapons falling cold as the last of her energy bleeds away.")
+        print(f"The {player_name} is stranded in space, systems falling cold as her energy bleeds away.")
     elif (TIME_LIMIT - player_global.parent_galaxy.stardate) <= 0:
         print(f"The {player_name} fought tirelessly, but she could not slow down the scouts quite fast enough.")
     print("Boldened by their victory against a Dwarven warship, the goblins move ever closer to the Mountainhome...")
