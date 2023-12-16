@@ -219,6 +219,8 @@ while True:
     elif cmd == "help":
         print(COMMAND_TEXT)
         input("[enter]...")
+    else:
+        print(f"The {player_name} doesn't understand '{cmd}'.")
     #refuel, restock, repair at stations
     if list(filter(lambda n: isinstance(n, Station), g.neighbors(player_global.sector, player_global.x, player_global.y, orthogonal=True))):
         # print(g.neighbors(player_global.sector, player_global.x, player_global.y, orthogonal=True))
