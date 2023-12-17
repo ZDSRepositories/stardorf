@@ -176,8 +176,8 @@ The {player_name} nav computer accepts:
     WARP: warp between sectors
     FIRE: fire weapons
         Railgun can fire at any spot, but takes ammo.
-        Magma cannon destroys any spaceship, but can only fire orthogonally.
-    SHIELD: raise shields
+        Magma cannon destroys any spaceship, but can only fire orthogonally. Costs 100 energy.
+    SHIELD: transfer energy to shields
 
 Moving orthogonally adjacent to a station will repair, refuel and restock your vessel.
 """
