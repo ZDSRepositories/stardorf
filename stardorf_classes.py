@@ -307,6 +307,7 @@ class Ship():
         #print(f"wtype {wtype} and wcount {wcount}")
         hit, damage, fatal = None, 0, False
         if wtype == weapon.MAGMA and wcount > 0:
+            self.energy -= 100
             hit = self.parent_galaxy.cast(self.sector, (self.x, self.y), targeting)
             if isinstance(hit, Ship):
                 damage, fatal = hit.hull, True
@@ -316,7 +317,7 @@ class Ship():
                 for gun in range(min(wcount, self.ammo)):
                     damage += random.randint(5, 20)
                     self.ammo -= 1
-                absorbed_damage = min(hit.shields, damage)
+                absorbed_damage = min(hit.shields, int(damage * 0.9))
                 hit.shields -= absorbed_damage
                 hit.hull -= (damage - absorbed_damage)
                 if hit.hull <= 0:
