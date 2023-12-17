@@ -163,29 +163,38 @@ player_name = input("What is your vessel named? ")
 
 COMMAND_TEXT = f"""
 * MISSION *
-Destroy every goblin vessel in {TIME_LIMIT} turns.
+Victory: Destroy every goblin vessel in {TIME_LIMIT} turns.
+Failure: Reach 0 hull integrity, 0 energy, or the time limit.
 
 * COMMANDS *
 The {player_name} nav computer accepts:
     SRS: scan local sector
+        @ = you, * = star, # = station, g = goblin
     LRS: scan long range
+        star count, station count, enemy count
     JUMP: move in local sector
     WARP: warp between sectors
     FIRE: fire weapons
+        Railgun can fire at any spot, but takes ammo.
+        Magma cannon destroys any spaceship, but can only fire orthogonally.
     SHIELD: raise shields
+
+Moving orthogonally adjacent to a station will repair, refuel and restock your vessel.
 """
 
 INTRO_TEXT = f"""* MISSION *
 The goblin empire has been skirmishing in sectors near Dwarven space. 
 If their scouts are not defeated, they will spell doom for our glorious Dwarven civilization.
-You've been put in command of the {player_name}, pride of the Dwarven navy, outfitted with adamantine railguns and a magma cannon.
+You command the {player_name}, pride of the Dwarven navy, outfitted with adamantine railguns and a magma cannon.
 In these unconquered sectors, human starbases scattered about will be your only source of fuel and repair.
 Your mission: strike down these goblin starships in {TIME_LIMIT} turns before they can overrun the Mountainhome.
 
 For the glory of all {CIV_NAME}!"""
 
-if input("Print intro/help now (y/n)? ").lower().strip() == "y":
+if input("Print intro (y/n)? ").lower().strip() == "y":
     print(INTRO_TEXT)
+if input("Print help (y/n)? ").lower().strip() == "y":
+    print(COMMAND_TEXT)
 input("[Enter] to embark on this mission...")
 
 g = Galaxy()
