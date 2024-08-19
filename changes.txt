@@ -1,5 +1,7 @@
 Most recent changes at top.
 
+stardorf requires Python 3.12.x or higher.
+
 Version 1.3
 
 Introduced ship subsystems with their own functions and damage.
