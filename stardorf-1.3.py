@@ -186,7 +186,7 @@ def examine_subsystems(player):
         health = player.subsystems[sub]
         status = "almost junk" if health < 0.25 else ("damaged" if health < 0.75 else "functional")
         status = "disabled" if health == 0 else status
-        print(f"{subsystem.NAMES[sub].upper():<17}{str(round(health*100, 1))+"%":<9}{status}")
+        print(f"{subsystem.NAMES[sub].upper():<17}{str(round(health*100, 1))+'%':<9}{status}")
 
 print("""*** Welcome to STAR DORF ***""")
 player_name = input("What is your vessel named? ")
