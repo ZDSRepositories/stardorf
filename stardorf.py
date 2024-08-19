@@ -283,7 +283,7 @@ while True:
         repaired_subst = []
         for subst in player_global.subsystems:
             if player_global.subsystems[subst] < 1.0:
-                player_global.subsystems[subst] = max(player_global.subsystems[subst] * 1.2, 1.0)
+                player_global.subsystems[subst] = min(player_global.subsystems[subst] * 1.2, 1.0)
                 print(f"{subsystem.NAMES[subst]}: repaired to {player_global.subsystems[subst]:.1f}% capability.")
 
         player_global.shields = 100
