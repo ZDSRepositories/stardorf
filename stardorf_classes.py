@@ -43,6 +43,13 @@ class weapon:
     ARBALEST = 2
     NAMES = ["adamantine railgun", "magma cannon", "plasma catapult"]
 
+class subsystem:
+    IMP_ENGINE, WARP_ENGINE, TARGETING, SHIELD, SRS, LRS, NAV_COMPUTER = \
+        range(7)
+    NAMES = ("engines", "warp drive", "targeting", "shield emitters", "SR scanner",
+             "LR scanner", "nav computer")
+
+SUBSYSTEM_DAMAGE_THRESHOLD_PERCENTAGE = 0.35
 
 def dist(p1, p2):
     return ((p1[0] -
@@ -111,9 +118,11 @@ class Galaxy():
                     local_coords = [random.randint(0, 9), random.randint(0, 9)]
                 elif s[local_coords[0]][local_coords[1]] == None:
                     # print("placing goblin", i, "in sector", s_designation, "at", local_coords)
-                    s[local_coords[0]][local_coords[1]] = Ship("newship" + str(i), parent_entity=entity.GOBLIN,
+                    s[local_coords[0]][local_coords[1]] = Ship("Goblin Scout " + str(i), parent_entity=entity.GOBLIN,
                                                                sector=s_designation, weapons=[weapon.ARBALEST, weapon.ARBALEST],
-                                                               coords=[local_coords[1],local_coords[0]], energy=random.randint(1,2), ammo=100, parent_galaxy=self)
+                                                               coords=[local_coords[1],local_coords[0]], energy=random.randint(1,2), ammo=100,
+                                                               systems=[subsystem.TARGETING, subsystem.IMP_ENGINE],
+                                                               parent_galaxy=self)
                     placed = True
 
     def set_tile(self, sector, x, y, object, replace=False):
@@ -191,6 +200,12 @@ class Galaxy():
             for ship in self.get_objects(self.player.sector)[2]:
                 ship.tick()
             self.stardate += 1
+        if (TIME_LIMIT - self.stardate) <= 10 and random.random() < 0.2:
+            sectors_under_attack = list(filter(lambda s: self.count_objects(s)[2] > 0 and self.count_objects(s)[1] > 0,
+                                          list(self.starmap.keys())))
+            alert_sector = random.choice(sectors_under_attack)
+            print(f"\nA station in sector {alert_sector.upper()} reports signs of goblin activity.")
+
 
     def neighbors(self, sector, x, y, orthogonal=False):
         neighbors = []
@@ -231,7 +246,7 @@ class Ship():
     MAX_AMMO = 20
     MAX_HULL = 100
 
-    def __init__(self, name, parent_entity, sector, coords, weapons, energy, ammo, parent_galaxy: Galaxy):
+    def __init__(self, name, parent_entity, sector, coords, weapons, energy, ammo, systems: [int], parent_galaxy: Galaxy):
         self.name = name
         self.parent_entity = parent_entity
         self.sector = sector
@@ -243,6 +258,9 @@ class Ship():
         self.hull = 100
         self.shields = 0
         self.known_space = []
+        self.subsystems = {}
+        for sys in systems:
+            self.subsystems[sys] = 1
 
     def get_char(self):
         return ("@", "g", "e")[self.parent_entity]
@@ -278,29 +296,45 @@ class Ship():
         self.learn_sector(self.sector)
 
     def tick(self):
-        #DONE: AI vessels should actually move on grid. fix bug and implement energy
-        #print(f"vessel {self.name} tick called")
+        self.shields *= 0.97
         if self.parent_entity == entity.GOBLIN:
-            self.energy = [2, 0, 1][self.energy]  # cycle thru energy
-            if self.energy == 2:
+            if random.random() < 2/3:
                 try:
+                    if self.get_capability(subsystem.IMP_ENGINE) < 0.75:
+                        print("The goblin vessel's engines sputter uselessly!")
+                        return
                     dx, dy = [random.randint(-3, 3), random.randint(-3, 3)]
                     newx, newy = self.x + dx, self.y + dy
                     self.move_to(self.sector, newx, newy)
                     print(f"Goblin vessel moves to {(self.x, self.y)}.")
                 except Exception as e:
                     print(" "+str(e))
-            elif self.energy == 1:
+            else:
+                if self.get_capability(subsystem.TARGETING) < 0.75:
+                    print("The goblin vessel's weapons misfire!")
+                    return
                 vessels = self.parent_galaxy.get_objects(self.sector)[2]
-                #print(f"goblin sees: {list(v.parent_entity for v in vessels)}")
-                dwarf = list(filter(lambda v: v.parent_entity == entity.DWARF, vessels))[0]
+                dwarf = self.parent_galaxy.player
                 target_coords = dwarf.x, dwarf.y
                 hit, damage, fatal = self.fire(wtype=weapon.ARBALEST, targeting=target_coords)
                 print(f"The goblin vessel at {(self.x, self.y)} fires an arbalest!")
                 print(f"The Plasma Arbalest bolts strike for {damage} damage!")
-                #print(hit)
+                if random.random() < 0.15:
+                    print("The goblin vessel summons a burst of speed!")
+                    self.tick()
 
 
+
+    def get_capability(self, subsystem_type):
+        if subsystem_type in self.subsystems:
+            return self.subsystems[subsystem_type]
+        else: return 0
+
+    def get_shield_absorption(self):
+        if self.get_capability(subsystem.SHIELD) >= 0.75:
+            return 0.9
+        else:
+            return (self.get_capability(subsystem.SHIELD) + 0.9)/2
 
     def fire(self, wtype, targeting):
         wcount = len(list(filter(lambda w: w == wtype, self.weapons)))
@@ -315,20 +349,32 @@ class Ship():
             hit = self.parent_galaxy.get_tile(self.sector, *targeting)
             if isinstance(hit, Ship):
                 for gun in range(min(wcount, self.ammo)):
-                    damage += random.randint(5, 20)
+                    damage += random.randint(1, 20)
                     self.ammo -= 1
-                absorbed_damage = min(hit.shields, int(damage * 0.9))
+                if damage >= hit.hull * SUBSYSTEM_DAMAGE_THRESHOLD_PERCENTAGE or random.random()<0.2:
+                    # target a subsystem
+                    sub = random.choice(list(hit.subsystems.keys()))
+                    if sub in [subsystem.IMP_ENGINE, subsystem.WARP_ENGINE]:
+                        # chance to re-roll if engine hit
+                        # because I'm nice :)
+                        if random.random() <= 0.5:
+                            sub = random.choice(list(hit.subsystems.keys()))
+                    if sub == subsystem.NAV_COMPUTER:
+                        if hit is hit.parent_galaxy.player:
+                            hit.forget_sector(random.choice(hit.known_space))
+                            hit.forget_sector(random.choice(hit.known_space))
+                    hit.subsystems[sub] = max(0, hit.subsystems[sub] - random.random()/5)
+                    print(f"{'\nALERT: ' if hit is hit.parent_galaxy.player else ''}{hit.name} {subsystem.NAMES[sub]} damaged!")
+
+                absorbed_damage = min(hit.shields, int(damage * hit.get_shield_absorption()))
                 hit.shields -= absorbed_damage
                 hit.hull -= (damage - absorbed_damage)
                 if hit.hull <= 0:
                     fatal = True
         if fatal:
-            #print(f"hit reported to main routine as hit.x, hit.y = {[hit.x, hit.y]}")
             self.parent_galaxy.set_tile(self.sector, hit.x, hit.y, None, replace=True)
             if hit.parent_entity == entity.GOBLIN:
                 self.parent_galaxy.goblin_count -= 1
-            #print(player_global.parent_galaxy.starmap[player_global.sector])
-            #raise Exception("we're done here, watch the traceback")
         return hit, damage, fatal
 
     def learn_sector(self, designation: str):

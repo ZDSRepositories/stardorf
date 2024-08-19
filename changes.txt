@@ -1,0 +1,8 @@
+Most recent changes at top.
+
+Version 1.3
+
+Introduced ship subsystems with their own functions and damage.
+Shields now lose energy over time. (3% per stardate.)
+Goblins do more damage and are a little more mobile.
+Player starts in a random sector now.
