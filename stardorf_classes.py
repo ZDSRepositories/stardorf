@@ -129,7 +129,6 @@ class Galaxy():
         # returns True on success
         if not replace and self.starmap[sector][y][x] != None:  # row-column!
             return False
-        #print(f"setting {self.starmap[sector][y][x]} at {(x, y)} to {object}")
         self.starmap[sector][y][x] = object
         return True
 
@@ -169,7 +168,6 @@ class Galaxy():
                     objects[1].append(tile)
                 elif isinstance(tile, Ship):
                     objects[2].append(tile)
-                    #print(f"added {tile}, {entity.NAMES[tile.parent_entity]} in {tile.sector}")
         return objects
 
     def sector_from_designation(self, s_designation):
@@ -181,7 +179,6 @@ class Galaxy():
 
     def sector_coords_from_designation(self, s_designation):
         key = list('abcdefghijklmnopqrstuvwx').index(s_designation)
-        # print(f"sector {s_designation} is at index {key}")
         row = int(key / (self.STARMAP_HEIGHT + 2))
         col = key - (row * self.STARMAP_WIDTH)
         return col, row  # x, y
@@ -201,10 +198,13 @@ class Galaxy():
                 ship.tick()
             self.stardate += 1
         if (TIME_LIMIT - self.stardate) <= 10 and random.random() < 0.2:
-            sectors_under_attack = list(filter(lambda s: self.count_objects(s)[2] > 0 and self.count_objects(s)[1] > 0,
-                                          list(self.starmap.keys())))
-            alert_sector = random.choice(sectors_under_attack)
-            print(f"\nA station in sector {alert_sector.upper()} reports signs of goblin activity.")
+            try:
+                sectors_under_attack = list(filter(lambda s: self.count_objects(s)[2] > 0 and self.count_objects(s)[1] > 0,
+                                              list(self.starmap.keys())))
+                alert_sector = random.choice(sectors_under_attack)
+                print("\n" + f"A station in sector {alert_sector.upper()} reports signs of goblin activity.")
+            except:
+                pass
 
 
     def neighbors(self, sector, x, y, orthogonal=False):
@@ -278,13 +278,15 @@ class Ship():
         except IndexError:
             return None
 
-    def move_to(self, new_sector, new_x, new_y, clamp = True):
+    def move_to(self, new_sector, new_x, new_y, clamp = True, check = False):
         if clamp:
             new_x = max(0, new_x)
             new_x = min(new_x, self.parent_galaxy.SECTOR_WIDTH - 1)
             new_y = max(0, new_y)
             new_y = min(new_y, self.parent_galaxy.SECTOR_HEIGHT - 1)
         #print(f" {self.name} moving to {(new_x, new_y)}")
+        if check and self.parent_galaxy.get_tile(new_sector, new_x, new_y) != None:
+            return False, [new_x, new_y]
         self.parent_galaxy.set_tile(self.sector, self.x, self.y, None, True)  # clear current tile
 
         self.sector = new_sector
@@ -295,22 +297,32 @@ class Ship():
 
         self.learn_sector(self.sector)
 
+        return True, [self.x, self.y]
+
     def tick(self):
         self.shields *= 0.97
         if self.parent_entity == entity.GOBLIN:
             if random.random() < 2/3:
                 try:
-                    if self.get_capability(subsystem.IMP_ENGINE) < 0.75:
+                    if self.get_capability(subsystem.IMP_ENGINE) < 1:
                         print("The goblin vessel's engines sputter uselessly!")
                         return
                     dx, dy = [random.randint(-3, 3), random.randint(-3, 3)]
                     newx, newy = self.x + dx, self.y + dy
-                    self.move_to(self.sector, newx, newy)
-                    print(f"Goblin vessel moves to {(self.x, self.y)}.")
+                    while isinstance(self.parent_galaxy.get_tile(self.sector, newx, newy), Ship):
+                        dx, dy = [random.randint(-3, 3), random.randint(-3, 3)]
+                        newx, newy = self.x + dx, self.y + dy
+                    result = self.move_to(self.sector, newx, newy)
+                    print(f"Goblin vessel moves to {(result[1], result[2])}.")
+                    if not result[0]:
+                        print("Unfortunately, there was a station there already.\nKABOOM!")
+                        self.parent_galaxy.clear_tile(self.sector, result[1], result[2])
+                        self.die()
+
                 except Exception as e:
-                    print(" "+str(e))
+                    pass
             else:
-                if self.get_capability(subsystem.TARGETING) < 0.75:
+                if self.get_capability(subsystem.TARGETING) < 1:
                     print("The goblin vessel's weapons misfire!")
                     return
                 vessels = self.parent_galaxy.get_objects(self.sector)[2]
@@ -338,7 +350,6 @@ class Ship():
 
     def fire(self, wtype, targeting):
         wcount = len(list(filter(lambda w: w == wtype, self.weapons)))
-        #print(f"wtype {wtype} and wcount {wcount}")
         hit, damage, fatal = None, 0, False
         if wtype == weapon.MAGMA and wcount > 0:
             self.energy -= 100
@@ -364,7 +375,8 @@ class Ship():
                             hit.forget_sector(random.choice(hit.known_space))
                             hit.forget_sector(random.choice(hit.known_space))
                     hit.subsystems[sub] = max(0, hit.subsystems[sub] - random.random()/5)
-                    print(f"{'\nALERT: ' if hit is hit.parent_galaxy.player else ''}{hit.name} {subsystem.NAMES[sub]} damaged!")
+                    print('\nALERT: ' if hit is hit.parent_galaxy.player else '', end = '')
+                    print(f"{hit.name} {subsystem.NAMES[sub]} damaged!")
 
                 absorbed_damage = min(hit.shields, int(damage * hit.get_shield_absorption()))
                 hit.shields -= absorbed_damage
@@ -372,10 +384,13 @@ class Ship():
                 if hit.hull <= 0:
                     fatal = True
         if fatal:
-            self.parent_galaxy.set_tile(self.sector, hit.x, hit.y, None, replace=True)
-            if hit.parent_entity == entity.GOBLIN:
-                self.parent_galaxy.goblin_count -= 1
+            hit.die()
         return hit, damage, fatal
+
+    def die(self):
+        self.parent_galaxy.set_tile(self.sector, self.x, self.y, None, replace=True)
+        if self.parent_entity == entity.GOBLIN:
+            self.parent_galaxy.goblin_count -= 1
 
     def learn_sector(self, designation: str):
         if not designation in self.known_space:

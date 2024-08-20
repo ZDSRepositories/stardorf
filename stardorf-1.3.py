@@ -17,11 +17,11 @@ def display_srs(s_designation, galaxy: Galaxy):
             tile = s[rowi][colj]
             if not malfunction:
                 if tile:
-                    print(f" {tile.get_char()} ", end="")
+                    print(f" {tile.get_char()} ", end="", flush=True)
                 else:
-                    print(" . ", end="")
+                    print(" . ", end="", flush=True)
             else:
-                print("   ", end="")
+                print("   ", end="", flush=True)
         print()
 
 
