@@ -343,7 +343,7 @@ class Ship():
         else: return 0
 
     def get_shield_absorption(self):
-        if self.get_capability(subsystem.SHIELD) >= 0.75:
+        if self.get_capability(subsystem.SHIELD) >= 0.9:
             return 0.9
         else:
             return (self.get_capability(subsystem.SHIELD) + 0.9)/2
